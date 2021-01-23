@@ -116,7 +116,7 @@ def get_new_sample_playlist(uri, new_playlist_name, user, verbose=False):
 
 def run_program():
     uri = "spotify:playlist:6iZZgDcyTS23fAmyjxqIz8"
-    name = "demo"
+    name = "who_sampled_moshe"
     username = '31yln7gos65hk5lwn5chxi225yqq'
     # playlist_id = uri.split(':')[4]
     get_new_sample_playlist(uri, name, username)
