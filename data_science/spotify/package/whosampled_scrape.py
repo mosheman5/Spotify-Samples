@@ -47,7 +47,6 @@ def getme_thesamples(song_name, artist_name):
         return None, None
 
 def get_whosampled_playlist(loaded_playlist):
-    samples = []
     new_playlist = []
     print('SPOTIFY PLAYLIST DISCOVERED: \n')
     for i in loaded_playlist:
