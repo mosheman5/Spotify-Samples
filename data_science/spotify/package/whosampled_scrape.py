@@ -1,9 +1,8 @@
-import requests
 from bs4 import BeautifulSoup
 import urllib3
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 http = urllib3.PoolManager()
-
+from tqdm import tqdm
 
 def retrieve_song_link(song_name, artist_name=None):
     query = song_name.replace(' ', '%20')
@@ -33,7 +32,10 @@ def retrieve_samples_v2(song_name, link):
     else:
         there_in = [i.split('\n') for i in list(filter(None, listed[0].split('\t')))][:-1]
     for i in there_in:
-        samples.append({'query':song_name, 'type':i[-7], 'genre':i[-6], 'title':i[-3], 'artist':i[-2].replace('by ', '').split(' (')[0], 'year': i[-2].replace('by ', '').split(' (')[1].replace(')', '')})
+        try:
+            samples.append({'query':song_name, 'type':i[-7], 'genre':i[-6], 'title':i[-3], 'artist':i[-2].replace('by ', '').split(' (')[0], 'year': i[-2].replace('by ', '').split(' (')[1].replace(')', '')})
+        except:
+            pass
     return samples, sampled_by
 
 def getme_thesamples(song_name, artist_name):
@@ -50,8 +52,11 @@ def get_whosampled_playlist(loaded_playlist):
     print('SPOTIFY PLAYLIST DISCOVERED: \n')
     for i in loaded_playlist:
         print(i['track']+' by '+i['artist'][0])
-    for i in loaded_playlist:
-        samples, sampled_by = getme_thesamples(i['track'], i['artist'][0])
+    for i in tqdm(loaded_playlist):
+        try:
+            samples, sampled_by = getme_thesamples(i['track'], i['artist'][0])
+        except:
+            continue
         if samples:
             new_playlist.append(samples)
     lst = [i for j in new_playlist for i in j]
