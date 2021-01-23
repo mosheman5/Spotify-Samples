@@ -28,11 +28,11 @@ def retrieve_samples_v2(song_name, link):
     if len(listed) == 2:
         there_in = [i.split('\n') for i in list(filter(None, listed[0].split('\t')))][:-1]
         there_out = [i.split('\n') for i in list(filter(None, listed[1].split('\t')))][:-1]
-        for j in there_out:
+        for j in there_in:
             sampled_by.append({'query':song_name, 'type':j[-7], 'genre':j[-6], 'title':j[-3], 'artist':j[-2].replace('by ', '').split(' (')[0], 'year': j[-2].replace('by ', '').split(' (')[1].replace(')', '')})
     else:
-        there_in = [i.split('\n') for i in list(filter(None, listed[0].split('\t')))][:-1]
-    for i in there_in:
+        there_out = [i.split('\n') for i in list(filter(None, listed[0].split('\t')))][:-1]
+    for i in there_out:
         try:
             samples.append({'query':song_name, 'type':i[-7], 'genre':i[-6], 'title':i[-3], 'artist':i[-2].replace('by ', '').split(' (')[0], 'year': i[-2].replace('by ', '').split(' (')[1].replace(')', '')})
         except:
@@ -45,19 +45,23 @@ def getme_thesamples(song_name, artist_name):
         samples, sampled_by = retrieve_samples_v2(song_name, link)
         return samples, sampled_by
     else:
-        return None, None
+        return [], []
 
-def get_whosampled_playlist(loaded_playlist):
+def get_whosampled_playlist(loaded_playlist, verbose=False):
     new_playlist = []
     print('SPOTIFY PLAYLIST DISCOVERED: \n')
-    for i in loaded_playlist:
-        print(i['track']+' by '+i['artist'][0])
+    if verbose:
+        for i in loaded_playlist:
+            print(i['track']+' by '+i['artist'][0])
     for i in tqdm(loaded_playlist):
+        orig_song = {'spotify_id': i['spotify_id']}
         try:
             samples, sampled_by = getme_thesamples(i['track'], i['artist'][0])
         except:
             continue
-        if samples:
-            new_playlist.append(samples)
-    lst = [i for j in new_playlist for i in j]
-    return lst
+        orig_song['samples'] = samples
+        orig_song['sampled_by'] = sampled_by
+        if len(samples) + len(sampled_by):
+            new_playlist.append(orig_song)
+
+    return new_playlist

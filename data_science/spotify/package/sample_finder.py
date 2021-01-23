@@ -31,9 +31,11 @@ def read_playlist(uri, sp):
     og_tracks = []
     results = sp.playlist_items(playlist_id=playlist_id)
     results = get_full_results(sp, results)  # Needed to extract more than 100 songs from the playlist
-    for i in results:
+    for i in tqdm(results):
         artists = [j['name'] for j in i['track']['artists']]
-        og_tracks.append({'artist' : artists, 'track':i['track']['name'].replace('Instrumental', '')})
+        og_tracks.append({'artist' : artists,
+                          'track':i['track']['name'].replace('Instrumental', ''),
+                          'spotify_id': i['track']['id']})
     return og_tracks
 
 
@@ -43,27 +45,36 @@ def get_sample_data(uri, sp):
     return new_playlist_tracks
 
 def get_spotify_ids(whosampled_playlist, sp):
-    id_list = []
-    unfound_list= []
-    for i in tqdm(whosampled_playlist):
-        try:
-            sub_list = []
-            artist = i['artist'].lower()
-    #         print('NEW SAMPLE: {} by {}'.format(i['title'], artist))
-            result = sp.search(i['title'], limit=50)['tracks']['items']
-            for j in result:
-                if j['artists'][0]['name'].lower() == artist:
-                    sub_list.append(j['id'])
-                    break
 
-            if sub_list:
-    #             print('FOUND ON SPOTIFY')
-                id_list.append(sub_list[0])
+    def check_for_song(item_to_check, list_to_add):
+        try:
+            artist = item_to_check['artist'].lower()
+            #         print('NEW SAMPLE: {} by {}'.format(i['title'], artist))
+            result = sp.search(item_to_check['title'], limit=50)['tracks']['items']
+            for jitem in result:
+                if jitem['artists'][0]['name'].lower() == artist:
+                    list_to_add.append(jitem['id'])
+                    break
             else:
-    #             print('NO ID FOUND FOR {} by {}'.format(i['title'], artist))
-                unfound_list.append((i['title']+' by '+artist))
+                #             print('NO ID FOUND FOR {} by {}'.format(i['title'], artist))
+                unfound_list.append((i['title'] + ' by ' + artist))
         except:
             pass
+
+    id_list = []
+    unfound_list = []
+    for i in tqdm(whosampled_playlist):
+        samples_list = []
+        sampled_by_list = []
+        for j in i['samples']:
+            check_for_song(j, samples_list)
+        for j in i['sampled_by']:
+            check_for_song(j, sampled_by_list)
+        if len(sampled_by_list) + len(samples_list) > 0:
+            id_list.append(i['spotify_id'])
+            [id_list.append(k) for k in samples_list]
+            [id_list.append(k) for k in sampled_by_list]
+
     location_rate=1 - len(unfound_list)/len(whosampled_playlist)
     return {'ids': id_list, 'unfound': unfound_list, 'rate': location_rate}
 
@@ -81,6 +92,7 @@ def create_and_populate(username, new_playlist_name, spotify_dict, sp):
 
     for par_list in new_lists:
         try:
+            par_list = [x for x in par_list if x]
             print(len(par_list))
             sp.user_playlist_add_tracks(username, newest_id, par_list, None) #populate playlist with all samples
         except:
