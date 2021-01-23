@@ -5,6 +5,7 @@ http = urllib3.PoolManager()
 from tqdm import tqdm
 
 def retrieve_song_link(song_name, artist_name=None):
+    song_name = song_name + ' ' + artist_name
     query = song_name.replace(' ', '%20')
     url = 'https://www.whosampled.com/search/tracks/?q={}'.format(query)
     r = http.request('GET', url)
